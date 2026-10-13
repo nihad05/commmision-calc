@@ -1,0 +1,15 @@
+date,user_type,operation_type,amount,currency
+2026-01-05,private,cash_in,200.00,EUR
+2026-01-06,business,cash_in,1000000.00,EUR
+2026-01-07,private,cash_in,16666.6667,USD
+2026-01-10,private,cash_out,1000.00,EUR
+2026-01-11,private,cash_out,30.00,USD
+2026-01-12,private,cash_out,200.01,EUR
+2026-01-15,business,cash_out,1000.00,EUR
+2026-01-16,business,cash_out,6.02,USD
+2026-02-01,private,loan_repayment,100.00,EUR
+2026-02-02,business,loan_repayment,2500.00,USD
+2026-02-03,private,loan_repayment,0.50,EUR
+2026-02-10,business,cash_in,10000.00,USD
+2026-02-15,private,cash_out,5000.00,USD
+2026-02-20,business,loan_repayment,49.99,EUR
