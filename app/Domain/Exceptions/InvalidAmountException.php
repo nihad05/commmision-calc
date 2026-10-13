@@ -10,4 +10,9 @@ final class InvalidAmountException extends CommissionException
     {
         return new self(sprintf('Amount must be a plain decimal number, "%s" given.', $value));
     }
+
+    public static function negative(string $value): self
+    {
+        return new self(sprintf('Amount must not be negative, "%s" given.', $value));
+    }
 }

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Domain\Import;
 
-use App\Domain\Exceptions\FileNotReadableException;
-use App\Domain\Exceptions\InvalidCsvHeaderException;
-use App\Domain\Exceptions\InvalidCsvRowException;
+use App\Domain\Exceptions\CommissionException;
 use App\Domain\Import\CsvTransactionParser;
 use App\Domain\Transaction\OperationType;
 use App\Domain\Transaction\UserType;
@@ -57,16 +55,10 @@ final class CsvTransactionParserTest extends TestCase
     #[DataProvider('invalidRows')]
     public function it_reports_the_line_field_and_value_of_an_invalid_row(string $fixture, string $field, string $value): void
     {
-        try {
-            iterator_to_array($this->parser()->parse(self::path("tests/fixtures/{$fixture}")));
-            self::fail('Expected an InvalidCsvRowException.');
-        } catch (InvalidCsvRowException $exception) {
-            self::assertSame(3, $exception->lineNumber);
-            self::assertSame($field, $exception->field);
-            self::assertSame($value, $exception->value);
-            self::assertStringContainsString('Line 3', $exception->getMessage());
-            self::assertStringContainsString($field, $exception->getMessage());
-        }
+        $this->expectException(CommissionException::class);
+        $this->expectExceptionMessage(sprintf('Line 3, field "%s", value "%s"', $field, $value));
+
+        iterator_to_array($this->parser()->parse(self::path("tests/fixtures/{$fixture}")));
     }
 
     /**
@@ -74,9 +66,9 @@ final class CsvTransactionParserTest extends TestCase
      */
     public static function invalidFiles(): iterable
     {
-        yield 'wrong header' => ['tests/fixtures/invalid_header.csv', InvalidCsvHeaderException::class, 'Line 1'];
-        yield 'empty file' => ['tests/fixtures/invalid_empty.csv', InvalidCsvHeaderException::class, 'empty'];
-        yield 'missing file' => ['tests/fixtures/does_not_exist.csv', FileNotReadableException::class, 'does_not_exist.csv'];
+        yield 'wrong header' => ['tests/fixtures/invalid_header.csv', CommissionException::class, 'Line 1'];
+        yield 'empty file' => ['tests/fixtures/invalid_empty.csv', CommissionException::class, 'empty'];
+        yield 'missing file' => ['tests/fixtures/does_not_exist.csv', CommissionException::class, 'does_not_exist.csv'];
     }
 
     /**

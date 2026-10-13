@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Import;
 
-use App\Domain\Exceptions\FileNotReadableException;
-use App\Domain\Exceptions\InvalidCsvHeaderException;
-use App\Domain\Exceptions\InvalidCsvRowException;
+use App\Domain\Exceptions\CommissionException;
 use App\Domain\Money\Amount;
 use App\Domain\Transaction\OperationType;
 use App\Domain\Transaction\TransactionData;
@@ -47,14 +45,14 @@ final readonly class CsvTransactionParser
         }
 
         if (! $headerSeen) {
-            throw InvalidCsvHeaderException::emptyFile();
+            throw new CommissionException('The file is empty, a header row is required.');
         }
     }
 
     private function open(string $path): SplFileObject
     {
         if (! is_file($path) || ! is_readable($path)) {
-            throw FileNotReadableException::at($path);
+            throw new CommissionException(sprintf('File "%s" does not exist or is not readable.', $path));
         }
 
         $file = new SplFileObject($path);
@@ -72,7 +70,11 @@ final readonly class CsvTransactionParser
         $header = array_map(static fn (?string $cell): string => trim((string) $cell, " \t\u{FEFF}"), $row);
 
         if ($header !== self::HEADER) {
-            throw InvalidCsvHeaderException::mismatch(self::HEADER, $row);
+            throw new CommissionException(sprintf(
+                'Line 1: expected header "%s", got "%s".',
+                implode(',', self::HEADER),
+                implode(',', $row),
+            ));
         }
     }
 
@@ -84,7 +86,7 @@ final readonly class CsvTransactionParser
         $cells = array_map(static fn (?string $cell): string => trim((string) $cell), $row);
 
         if (count($cells) !== count(self::HEADER)) {
-            throw InvalidCsvRowException::columnCount($line, count(self::HEADER), implode(',', $cells));
+            throw self::invalidRow($line, 'row', implode(',', $cells), sprintf('expected %d columns, got %d.', count(self::HEADER), count($cells)));
         }
 
         [$date, $userType, $operationType, $amount, $currency] = $cells;
@@ -103,7 +105,7 @@ final readonly class CsvTransactionParser
         $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
 
         if ($date === false || $date->format('Y-m-d') !== $value) {
-            throw new InvalidCsvRowException($line, 'date', $value, 'must be a valid date in Y-m-d format.');
+            throw self::invalidRow($line, 'date', $value, 'must be a valid date in Y-m-d format.');
         }
 
         return $date;
@@ -117,7 +119,7 @@ final readonly class CsvTransactionParser
      */
     private function enum(int $line, string $field, string $value, string $enum): BackedEnum
     {
-        return $enum::tryFrom($value) ?? throw new InvalidCsvRowException(
+        return $enum::tryFrom($value) ?? throw self::invalidRow(
             $line,
             $field,
             $value,
@@ -128,13 +130,18 @@ final readonly class CsvTransactionParser
     private function amount(int $line, string $value, string $currency): Amount
     {
         if (! is_numeric($value) || preg_match(self::AMOUNT_PATTERN, $value) !== 1 || bccomp($value, '0', Amount::SCALE) <= 0) {
-            throw new InvalidCsvRowException($line, 'amount', $value, 'must be a positive decimal with at most 12 integer and 4 fractional digits.');
+            throw self::invalidRow($line, 'amount', $value, 'must be a positive decimal with at most 12 integer and 4 fractional digits.');
         }
 
         if (preg_match(self::CURRENCY_PATTERN, $currency) !== 1) {
-            throw new InvalidCsvRowException($line, 'currency', $currency, 'must be a 3-letter uppercase ISO 4217 code.');
+            throw self::invalidRow($line, 'currency', $currency, 'must be a 3-letter uppercase ISO 4217 code.');
         }
 
         return Amount::of($value, $currency);
+    }
+
+    private static function invalidRow(int $line, string $field, string $value, string $reason): CommissionException
+    {
+        return new CommissionException(sprintf('Line %d, field "%s", value "%s": %s', $line, $field, $value, $reason));
     }
 }

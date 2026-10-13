@@ -6,4 +6,4 @@ namespace App\Domain\Exceptions;
 
 use RuntimeException;
 
-abstract class CommissionException extends RuntimeException {}
+class CommissionException extends RuntimeException {}

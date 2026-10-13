@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Money;
 
-use App\Domain\Exceptions\CurrencyMismatchException;
 use App\Domain\Exceptions\InvalidAmountException;
-use App\Domain\Exceptions\NegativeAmountException;
+use App\Domain\Exceptions\InvalidCurrencyException;
 
 final readonly class Amount
 {
@@ -22,7 +21,7 @@ final readonly class Amount
         }
 
         if (bccomp($value, '0', self::SCALE) < 0) {
-            throw NegativeAmountException::for($value);
+            throw InvalidAmountException::negative($value);
         }
 
         $this->value = bcadd($value, '0', self::SCALE);
@@ -104,7 +103,7 @@ final readonly class Amount
     private function assertSameCurrency(self $other): void
     {
         if (! $this->currency->equals($other->currency)) {
-            throw CurrencyMismatchException::between($this->currency, $other->currency);
+            throw InvalidCurrencyException::mismatch($this->currency, $other->currency);
         }
     }
 }

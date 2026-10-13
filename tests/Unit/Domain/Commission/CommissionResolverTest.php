@@ -10,7 +10,7 @@ use App\Domain\Commission\CashOutPrivateCommission;
 use App\Domain\Commission\CommissionResolver;
 use App\Domain\Commission\CommissionType;
 use App\Domain\Commission\LoanRepaymentCommission;
-use App\Domain\Exceptions\UnsupportedTransactionException;
+use App\Domain\Exceptions\CommissionException;
 use App\Domain\Money\Amount;
 use App\Domain\Transaction\OperationType;
 use App\Domain\Transaction\TransactionData;
@@ -59,7 +59,7 @@ final class CommissionResolverTest extends TestCase
     {
         $resolver = new CommissionResolver([new CashInCommission]);
 
-        $this->expectException(UnsupportedTransactionException::class);
+        $this->expectException(CommissionException::class);
         $this->expectExceptionMessage('cash_out');
 
         $resolver->resolve(self::transaction(OperationType::CashOut, UserType::Business));

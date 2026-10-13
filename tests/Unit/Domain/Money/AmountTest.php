@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Domain\Money;
 
-use App\Domain\Exceptions\CurrencyMismatchException;
 use App\Domain\Exceptions\InvalidAmountException;
-use App\Domain\Exceptions\NegativeAmountException;
+use App\Domain\Exceptions\InvalidCurrencyException;
 use App\Domain\Money\Amount;
 use App\Domain\Money\Currency;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -76,7 +75,8 @@ final class AmountTest extends TestCase
     #[Test]
     public function it_rejects_negative_values(): void
     {
-        $this->expectException(NegativeAmountException::class);
+        $this->expectException(InvalidAmountException::class);
+        $this->expectExceptionMessage('negative');
 
         Amount::of('-0.01', 'EUR');
     }
@@ -105,7 +105,7 @@ final class AmountTest extends TestCase
     #[Test]
     public function it_refuses_math_across_currencies(): void
     {
-        $this->expectException(CurrencyMismatchException::class);
+        $this->expectException(InvalidCurrencyException::class);
         $this->expectExceptionMessage('EUR and USD');
 
         Amount::of('1', 'EUR')->add(Amount::of('1', 'USD'));
@@ -114,7 +114,7 @@ final class AmountTest extends TestCase
     #[Test]
     public function it_refuses_comparison_across_currencies(): void
     {
-        $this->expectException(CurrencyMismatchException::class);
+        $this->expectException(InvalidCurrencyException::class);
 
         Amount::of('1', 'EUR')->min(Amount::of('1', 'USD'));
     }
